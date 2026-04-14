@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+
+  train_baseline:
+    build: .
+    volumes:
+      - .:/app
+    command: >
+      python train.py
+      --reward_type baseline
+      --timesteps 200000
+      --save_path models/ppo_baseline.zip
+      --log_dir logs/baseline
+
+  train_shaped:
+    build: .
+    volumes:
+      - .:/app
+    command: >
+      python train.py
+      --reward_type shaped
+      --timesteps 200000
+      --save_path models/ppo_shaped.zip
+      --log_dir logs/shaped
+
+  evaluate:
+    build: .
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - .:/app
+    command: >
+      python evaluate.py
+      --model_path models/ppo_shaped.zip
+      --record_gif True
+      --gif_path media/agent_final.gif
