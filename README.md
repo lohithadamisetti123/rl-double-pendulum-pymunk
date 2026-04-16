@@ -6,16 +6,17 @@ This project builds a **double inverted pendulum simulation** using `pymunk` and
 
 ## Screenshots
 
-You can add your own screenshots here after running the project:
+### Reward comparison graph
 
-* Reward comparison graph:
-  `reward_comparison.png`
+![Reward comparison](reward_comparison.png)
 
-* Initial agent behavior (early training):
-  `media/agent_initial.gif`
+### Initial agent behavior (early training)
 
-* Final trained agent behavior:
-  `media/agent_final.gif`
+![Initial agent behavior](media/agent_initial.gif)
+
+### Final trained agent behavior
+
+![Final agent behavior](media/agent_final.gif)
 
 ---
 

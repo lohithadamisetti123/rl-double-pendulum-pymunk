@@ -12,7 +12,6 @@ def load_first_valid_csv(log_dir: str) -> pd.DataFrame:
     for fname in files:
         path = os.path.join(log_dir, fname)
         df = pd.read_csv(path)
-        # Skip header-only monitor files that only contain meta JSON in first row
         numeric = df.select_dtypes(include="number")
         if numeric.shape[0] >= 1 and numeric.shape[1] >= 1:
             return df
@@ -20,16 +19,13 @@ def load_first_valid_csv(log_dir: str) -> pd.DataFrame:
 
 
 def get_timesteps_and_rewards(df: pd.DataFrame):
-    # Try common SB3 / Monitor patterns first
     if "timesteps" in df.columns and "ep_rew_mean" in df.columns:
         ts = df["timesteps"]
         rew = df["ep_rew_mean"]
     elif {"l", "r"}.issubset(df.columns):
-        # SB3 Monitor: l = episode length, r = episode reward
         ts = df["l"].cumsum()
         rew = df["r"]
     else:
-        # Fallback: first two numeric columns as (timesteps, reward)
         numeric = df.select_dtypes(include="number")
         if numeric.shape[1] < 2:
             raise ValueError(
@@ -38,6 +34,13 @@ def get_timesteps_and_rewards(df: pd.DataFrame):
         ts = numeric.iloc[:, 0]
         rew = numeric.iloc[:, 1]
     return ts, rew
+
+
+def normalize_rewards(rew: pd.Series) -> pd.Series:
+    max_abs = rew.abs().max()
+    if max_abs == 0:
+        return rew
+    return rew / max_abs
 
 
 def main():
@@ -50,13 +53,17 @@ def main():
     ts_base, rew_base = get_timesteps_and_rewards(df_base)
     ts_shaped, rew_shaped = get_timesteps_and_rewards(df_shaped)
 
+    # Normalize each curve independently to [-1, 1]
+    rew_base_norm = normalize_rewards(rew_base)
+    rew_shaped_norm = normalize_rewards(rew_shaped)
+
     plt.figure(figsize=(8, 5))
-    plt.plot(ts_base, rew_base, label="Baseline Reward", alpha=0.7)
-    plt.plot(ts_shaped, rew_shaped, label="Shaped Reward", alpha=0.7)
+    plt.plot(ts_base, rew_base_norm, label="Baseline Reward (normalized)", alpha=0.7)
+    plt.plot(ts_shaped, rew_shaped_norm, label="Shaped Reward (normalized)", alpha=0.7)
 
     plt.xlabel("Timesteps")
-    plt.ylabel("Mean Reward")
-    plt.title("Baseline vs Shaped Reward Learning Curves")
+    plt.ylabel("Normalized Mean Reward")
+    plt.title("Baseline vs Shaped Reward Learning Curves (Normalized)")
     plt.legend()
     plt.grid(True)
 
